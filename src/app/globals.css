@@ -1,0 +1,395 @@
+@import "tailwindcss";
+
+/* Site tokens come from the editable theme (see lib/theme.ts → themeVars). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-glow: var(--glow);
+  --font-display: var(--site-display);
+  --font-body: var(--site-body);
+  --font-telugu: var(--font-telugu);
+  --font-ui: var(--font-manrope);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Site ---------- */
+/* In the components layer so Tailwind utilities (hidden, sm:…, !px-…) can override them. */
+@layer components {
+.site {
+  /* clip decorative glows that bleed past the edge (prevents sideways wobble on phones) */
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--site-body), var(--font-telugu), var(--font-devanagari), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.h-display {
+  font-family: var(--site-display), var(--font-telugu), var(--font-devanagari), serif;
+  text-transform: var(--heading-case);
+  letter-spacing: 0.035em;
+  line-height: 1.06;
+  font-weight: 600;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.telugu {
+  font-family: var(--font-telugu), sans-serif;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+@media (min-width: 768px) {
+  .wrap {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}
+
+.section-pad {
+  padding-top: clamp(64px, 9vw, 120px);
+  padding-bottom: clamp(64px, 9vw, 120px);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid rgb(var(--fg-rgb) / 0.08);
+  border-radius: var(--radius);
+}
+
+.rounded-theme {
+  border-radius: var(--radius);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s;
+  white-space: nowrap;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 10px 30px -10px rgb(var(--primary-rgb) / 0.7);
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 10px 30px -12px rgb(var(--accent-rgb) / 0.7);
+}
+.btn-ghost {
+  border: 1px solid rgb(var(--fg-rgb) / 0.3);
+  color: var(--fg);
+  background: rgb(var(--fg-rgb) / 0.04);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-light {
+  background: #fff;
+  color: #111;
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s;
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+.gold-text {
+  background: linear-gradient(100deg, var(--accent), #fff3cf 45%, var(--accent) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+}
+
+/* Welcome slider: slow-moving brand gradient (crimson → violet → gold), like a stage wash. */
+.welcome-gradient {
+  background:
+    radial-gradient(60% 70% at 18% 30%, rgb(var(--primary-rgb) / 0.95), transparent 70%),
+    radial-gradient(55% 65% at 82% 25%, rgb(var(--glow-rgb) / 0.95), transparent 70%),
+    radial-gradient(45% 55% at 60% 85%, rgb(var(--accent-rgb) / 0.55), transparent 70%),
+    radial-gradient(70% 80% at 40% 60%, rgb(var(--glow-rgb) / 0.45), transparent 75%),
+    var(--bg);
+  background-size: 160% 160%;
+  animation: welcome-shift 18s ease-in-out infinite alternate;
+}
+@keyframes welcome-shift {
+  0% {
+    background-position: 0% 30%;
+  }
+  50% {
+    background-position: 60% 70%;
+  }
+  100% {
+    background-position: 100% 20%;
+  }
+}
+.welcome-in > * {
+  animation: welcome-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.welcome-in > *:nth-child(2) {
+  animation-delay: 0.15s;
+}
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Stage-light aurora used behind the hero (echoes the church's stage lighting). */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 80% at 50% 110%, rgb(var(--primary-rgb) / 0.45), transparent 60%), var(--bg);
+}
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.aurora::before {
+  background: radial-gradient(circle, rgb(var(--glow-rgb) / 0.9), transparent 65%);
+  top: -30vmax;
+  left: -15vmax;
+}
+.aurora::after {
+  background: radial-gradient(circle, rgb(var(--primary-rgb) / 0.85), transparent 65%);
+  bottom: -35vmax;
+  right: -20vmax;
+  animation-delay: -9s;
+}
+@keyframes drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(8vmax, 6vmax) scale(1.15);
+  }
+}
+
+.beams {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 200deg at 50% -10%, transparent 0deg, rgb(var(--accent-rgb) / 0.12) 8deg, transparent 16deg, transparent 28deg, rgb(255 255 255 / 0.06) 34deg, transparent 40deg, transparent 320deg, rgb(var(--accent-rgb) / 0.1) 330deg, transparent 338deg);
+  mix-blend-mode: screen;
+  animation: sway 14s ease-in-out infinite alternate;
+  transform-origin: 50% -10%;
+}
+@keyframes sway {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+
+/* glitter floor, like the sequinned stage */
+.sparkle {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(1px 1px at 20% 30%, #fff8, transparent), radial-gradient(1px 1px at 70% 60%, #fff6, transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, #ffe9b066, transparent), radial-gradient(1px 1px at 85% 20%, #fff5, transparent),
+    radial-gradient(1px 1px at 10% 70%, #fff4, transparent), radial-gradient(1.5px 1.5px at 55% 15%, #ffe9b055, transparent);
+  background-size: 240px 240px;
+  animation: twinkle 6s linear infinite;
+  opacity: 0.7;
+}
+@keyframes twinkle {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.kenburns {
+  animation: kenburns 30s ease-in-out infinite alternate;
+}
+@keyframes kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.14) translate(-1%, -1%);
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff2d3d;
+  box-shadow: 0 0 0 0 #ff2d3d99;
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  70% {
+    box-shadow: 0 0 0 10px #ff2d3d00;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #ff2d3d00;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 22%;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .aurora::after,
+  .beams,
+  .sparkle,
+  .kenburns,
+  .reveal,
+  .welcome-gradient,
+  .welcome-in > * {
+    animation: none !important;
+  }
+}
+
+/* ---------- Telugu & Hindi ----------
+   Letter-spacing breaks how these scripts join, uppercase has no meaning, and their vowel
+   marks need taller lines. Small labels get a size bump so they stay readable. */
+/* (the brand wordmark is marked lang="en" and keeps its spacing) */
+.site:is(:lang(te), :lang(hi)) :not(:lang(en)) {
+  letter-spacing: 0 !important;
+}
+.site:is(:lang(te), :lang(hi)) :is(.h-display, .eyebrow, .btn) {
+  text-transform: none;
+}
+.site:lang(te) .h-display {
+  font-family: var(--font-telugu), sans-serif;
+  font-weight: 700;
+  line-height: 1.38;
+}
+.site:lang(hi) .h-display {
+  font-family: var(--font-devanagari), sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.site:lang(te) {
+  font-family: var(--font-telugu), var(--site-body), sans-serif;
+}
+.site:lang(hi) {
+  font-family: var(--font-devanagari), var(--site-body), sans-serif;
+}
+.site:is(:lang(te), :lang(hi)) .eyebrow {
+  font-size: 0.82rem;
+}
+.site:is(:lang(te), :lang(hi)) .btn {
+  font-size: 0.9rem;
+}
+.site:is(:lang(te), :lang(hi)) :is(.text-\[11px\], .text-\[10px\]) {
+  font-size: 12.5px;
+}
+/* ---------- Visual editor (inside preview iframe) ---------- */
+.is-editing [data-editable] {
+  cursor: text;
+  outline: 1px dashed transparent;
+  outline-offset: 4px;
+  border-radius: 4px;
+  transition: outline-color 0.15s;
+}
+.is-editing [data-editable]:hover {
+  outline-color: rgb(56 189 248 / 0.8);
+}
+.is-editing [data-editable]:focus {
+  outline: 2px solid #38bdf8;
+  background: rgb(56 189 248 / 0.06);
+}
+.is-editing [data-editable]:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+}
+.is-editing a {
+  cursor: default;
+}
