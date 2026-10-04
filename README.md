@@ -40,12 +40,17 @@ They're then stored hashed in `data/admin.json` and the `.env.local` values stop
 - **WhatsApp forms:** any button linked to `#form:prayer`, `#form:baptism` or `#form:volunteer` opens that form;
   submitting opens WhatsApp to the church number with the answers already typed in.
 
-## Deploying
+## Deploying (Render)
 
-Needs a Node host with a persistent disk (the `data/` folder), e.g. a small VPS, Render/Railway with a volume, or Docker:
+This repo includes `render.yaml`. In Render: **New → Blueprint →** pick `plnmadmin`.
+It creates a Starter web service in Singapore with a 1 GB disk at `/var/data` (where all content is stored).
+During setup Render asks for:
 
-```bash
-npm run build && npm start
-```
+- `ADMIN_PASSWORD`: the starter password for the editor (change it later under **Account & login**)
+- `SITE_URL`: the public website address (e.g. `https://plnm.vercel.app`); can be filled in after the website is deployed
 
-Set `ADMIN_PASSWORD` and `SESSION_SECRET` in the host's environment. Serverless hosts with read-only filesystems (e.g. Vercel) would need the store in `src/lib/store.ts` swapped for a database/blob store.
+`SESSION_SECRET` and `REVALIDATE_SECRET` are generated automatically. Copy `REVALIDATE_SECRET`
+into the website's Vercel project so Publish refreshes the site instantly.
+
+Content is served to the public website (repo `plnm`) at `/api/public/content`.
+Back up the disk regularly from the Render dashboard.

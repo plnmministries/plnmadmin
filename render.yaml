@@ -1,0 +1,31 @@
+# Render Blueprint for the admin app (editor + content storage).
+# Render → New → Blueprint → pick this repo. You'll be asked for ADMIN_PASSWORD and SITE_URL.
+services:
+  - type: web
+    name: plnmadmin
+    runtime: node
+    region: singapore # closest Render region to Hyderabad
+    plan: starter # a persistent disk needs a paid plan; content lives on it
+    buildCommand: npm ci && npm run build
+    startCommand: npm start -- -H 0.0.0.0
+    healthCheckPath: /admin/login
+    autoDeploy: true
+    disk:
+      name: content
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CONTENT_DIR
+        value: /var/data
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false # you type it during setup; change it later inside the editor
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: REVALIDATE_SECRET
+        generateValue: true # copy this value into the Vercel project too
+      - key: SITE_URL
+        sync: false # the Vercel website address, e.g. https://plnm.vercel.app
