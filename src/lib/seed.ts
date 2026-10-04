@@ -1,6 +1,7 @@
 import type { SiteContent, Sermon } from "./types";
 import seedSermons from "./seed-sermons.json";
 import { SEED_TRANSLATIONS } from "./seed-translations";
+import { migrate } from "./migrate";
 
 // First-run content. Once the admin publishes, data/published.json takes over.
 
@@ -46,6 +47,11 @@ export const THEME_PRESETS = {
 } as const;
 
 export function createSeed(): SiteContent {
+  // one-time updates (e.g. the Follow us section) apply to fresh sites too
+  return migrate(baseSeed());
+}
+
+function baseSeed(): SiteContent {
   return {
     updatedAt: new Date().toISOString(),
     settings: {

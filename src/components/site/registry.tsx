@@ -5,6 +5,7 @@ import { CardGrid, ComingSoon, CtaBanner, Hero, Leaders, PageHeader, RichText, S
 import { LatestSermon, SermonLibrary, VideoGrid } from "./sections/media";
 import { ConnectOptions, EventsList, Giving, ServiceTimes, Visit } from "./sections/church";
 import { WelcomeSlider } from "./sections/welcome";
+import { FollowUs } from "./sections/follow";
 
 export type Field =
   | { key: string; label: string; type: "text" | "textarea" | "image" | "url" | "youtube" | "toggle" | "icon" | "link" | "category" | "sermon"; help?: string; placeholder?: string }
@@ -322,6 +323,41 @@ export const SECTIONS: Record<string, SectionDef> = {
     ],
     defaults: { eyebrow: "Visit us", title: "Find us", text: "", showMap: true },
     dataPanel: { panel: "settings", label: "Edit address" },
+  },
+  followUs: {
+    label: "Follow us",
+    description: "Big one-tap buttons to subscribe on YouTube, follow on Instagram & Facebook, join the WhatsApp channel.",
+    group: "Church",
+    component: FollowUs,
+    fields: [
+      ...head,
+      {
+        key: "items",
+        label: "Buttons",
+        type: "list",
+        itemLabel: "Button",
+        titleKey: "label",
+        newItem: { platform: "youtube", label: "Subscribe", detail: "", href: "" },
+        itemFields: [
+          {
+            key: "platform",
+            label: "App",
+            type: "select",
+            options: [
+              { value: "youtube", label: "YouTube" },
+              { value: "instagram", label: "Instagram" },
+              { value: "facebook", label: "Facebook" },
+              { value: "whatsapp", label: "WhatsApp channel" },
+              { value: "x", label: "X (Twitter)" },
+            ],
+          },
+          { key: "label", label: "Button text", type: "text", placeholder: "Follow" },
+          { key: "detail", label: "Small text", type: "text", help: "e.g. 38K+ followers" },
+          { key: "href", label: "Link (optional)", type: "url", help: "Leave empty to use the link from Church info → Social links" },
+        ],
+      },
+    ],
+    defaults: { eyebrow: "Stay connected", title: "Follow us", subtitle: "", items: [] },
   },
   verse: {
     label: "Scripture",

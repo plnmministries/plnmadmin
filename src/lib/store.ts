@@ -5,6 +5,7 @@ import type { SiteContent } from "./types";
 import { createSeed } from "./seed";
 import { SEED_TRANSLATIONS } from "./seed-translations";
 import { db, hasDb, kvDel, kvGet, kvSet, mediaGet, ready } from "./db";
+import { migrate } from "./migrate";
 
 // Content store with two backends:
 //   • Postgres (when DATABASE_URL is set; Neon in production): tables plnm_kv / plnm_revisions / plnm_media
@@ -26,7 +27,7 @@ function normalize(c: SiteContent): SiteContent {
   if (!c.translations) c.translations = structuredClone(SEED_TRANSLATIONS);
   c.translations.te ??= {};
   c.translations.hi ??= {};
-  return c;
+  return migrate(c);
 }
 
 async function readJson<T>(file: string): Promise<T | null> {

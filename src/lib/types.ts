@@ -122,4 +122,6 @@ export type SiteContent = {
   events: ChurchEvent[];
   /** Telugu / Hindi text keyed by translation key (see lib/translatable.ts). English lives in the fields themselves. */
   translations: { te: Record<string, string>; hi: Record<string, string> };
+  /** ids of one-time content updates already applied (see lib/migrate.ts) */
+  appliedMigrations?: string[];
 };
