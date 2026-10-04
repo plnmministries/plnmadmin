@@ -1,28 +1,25 @@
-# Render Blueprint for the admin app (editor + content storage).
-# Render → New → Blueprint → pick this repo. You'll be asked for ADMIN_PASSWORD and SITE_URL.
+# Render Blueprint for the admin app (editor). Free plan: no disk needed, because all content,
+# photos and the login are stored in the Neon database (DATABASE_URL).
+# Render → New → Blueprint → pick this repo. You'll be asked for ADMIN_PASSWORD, DATABASE_URL and SITE_URL.
 services:
   - type: web
     name: plnmadmin
     runtime: node
     region: singapore # closest Render region to Hyderabad
-    plan: starter # a persistent disk needs a paid plan; content lives on it
+    plan: free # sleeps after 15 min idle; first visit to the editor then takes ~1 min. The public site is unaffected.
     buildCommand: npm ci && npm run build
     startCommand: npm start -- -H 0.0.0.0
     healthCheckPath: /admin/login
     autoDeploy: true
-    disk:
-      name: content
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: CONTENT_DIR
-        value: /var/data
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_PASSWORD
         sync: false # you type it during setup; change it later inside the editor
+      - key: DATABASE_URL
+        sync: false # Neon connection string (same one the Vercel website uses)
       - key: SESSION_SECRET
         generateValue: true
       - key: REVALIDATE_SECRET

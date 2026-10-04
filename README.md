@@ -40,17 +40,16 @@ They're then stored hashed in `data/admin.json` and the `.env.local` values stop
 - **WhatsApp forms:** any button linked to `#form:prayer`, `#form:baptism` or `#form:volunteer` opens that form;
   submitting opens WhatsApp to the church number with the answers already typed in.
 
-## Deploying (Render)
+## Deploying (Render free + Neon)
 
-This repo includes `render.yaml`. In Render: **New → Blueprint →** pick `plnmadmin`.
-It creates a Starter web service in Singapore with a 1 GB disk at `/var/data` (where all content is stored).
-During setup Render asks for:
+Storage: when `DATABASE_URL` is set, content, publish history, uploaded photos and the login are
+stored in Postgres (Neon) instead of `./data`, so the app works on hosts without a disk.
 
-- `ADMIN_PASSWORD`: the starter password for the editor (change it later under **Account & login**)
-- `SITE_URL`: the public website address (e.g. `https://plnm.vercel.app`); can be filled in after the website is deployed
+1. **Neon:** in Vercel → *Storage* → *Create Database* → **Neon** (free). Copy its `DATABASE_URL`
+   (the pooled one). Or create it at neon.tech.
+2. **Render:** *New → Blueprint →* pick `plnmadmin` (uses `render.yaml`: free plan, Singapore).
+   Fill in `ADMIN_PASSWORD`, `DATABASE_URL` and `SITE_URL` (can be added after the website is live).
+   `SESSION_SECRET` and `REVALIDATE_SECRET` are generated; copy `REVALIDATE_SECRET` into Vercel.
 
-`SESSION_SECRET` and `REVALIDATE_SECRET` are generated automatically. Copy `REVALIDATE_SECRET`
-into the website's Vercel project so Publish refreshes the site instantly.
-
-Content is served to the public website (repo `plnm`) at `/api/public/content`.
-Back up the disk regularly from the Render dashboard.
+The free plan sleeps after 15 minutes without use, so the first visit to the editor takes about a minute.
+Visitors are not affected: the public website reads straight from the database.

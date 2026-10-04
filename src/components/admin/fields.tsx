@@ -81,7 +81,35 @@ export function UrlInput({ value, onChange, content }: { value: string; onChange
 
 // ---------------- Media ----------------
 
-export async function uploadFile(file: File): Promise<string> {
+// Phone photos are often 3–8 MB. Shrink big photos to ≤ 2000px JPEG before uploading:
+// faster pages for visitors and far less database space. Logos/PNGs with transparency stay as they are.
+async function shrinkPhoto(file: File): Promise<File> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 450 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale);
+    const h = Math.round(bmp.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (file.type === "image/png") {
+      // keep PNGs that use transparency (logos, emblems)
+      const px = ctx.getImageData(0, 0, w, h).data;
+      for (let i = 3; i < px.length; i += 4 * 97) if (px[i] < 250) return file;
+    }
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
+export async function uploadFile(original: File): Promise<string> {
+  const file = await shrinkPhoto(original);
   const fd = new FormData();
   fd.append("file", file);
   const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
