@@ -119,14 +119,15 @@ function LiveBlock({ p }: P) {
               </div>
             ) : (
               <div className="inline-flex items-center gap-2 rounded-full border border-fg/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-muted">
-                <Radio className="h-3.5 w-3.5" /> {ui("nextLive")}
+                <Radio className="h-3.5 w-3.5" /> {ui("notLive")}
               </div>
             )}
             <Txt as="h2" className="h-display mt-5 text-3xl md:text-4xl" value={p.liveTitle} field="liveTitle" />
             <Txt as="p" className="mt-3 text-muted" value={p.liveText} field="liveText" multiline />
             {!live.live && next && cd && (
               <div className="mt-6">
-                <div className="text-sm text-muted">
+                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent">{ui("nextLive")}</div>
+                <div className="mt-1 text-sm text-muted">
                   {tr(`g:settings.serviceTimes.${content.settings.serviceTimes.findIndex((t) => t.label === next.label)}.label`, next.label)} · {ui("sunday")} {next.time} {ui("ist")}
                 </div>
                 <div className="mt-3 flex gap-3">
@@ -145,8 +146,17 @@ function LiveBlock({ p }: P) {
               </div>
             )}
             <div className="mt-7 flex flex-wrap gap-3">
-              <a href={`${content.settings.socials.youtube}?sub_confirmation=1`} target="_blank" rel="noreferrer" className="btn btn-primary">
-                <YouTubeIcon className="h-4 w-4" /> {ui("subscribe")}
+              {/* always works, even if live detection misses a stream: YouTube resolves the channel's current live */}
+              <a
+                href={live.live && live.videoId ? `https://www.youtube.com/watch?v=${live.videoId}` : `https://www.youtube.com/channel/${content.settings.youtubeChannelId}/live`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary"
+              >
+                <YouTubeIcon className="h-4 w-4" /> {ui("openYoutube")}
+              </a>
+              <a href={`${content.settings.socials.youtube}?sub_confirmation=1`} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                {ui("subscribe")}
               </a>
               {live.live && live.videoId && (
                 <button className="btn btn-ghost" onClick={() => play({ id: live.videoId!, title: "Live service", live: true } as never)}>
