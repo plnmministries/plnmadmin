@@ -271,7 +271,10 @@ export function Giving({ p }: P) {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState("");
-  const params = g.upiId ? `pa=${encodeURIComponent(g.upiId)}&pn=${encodeURIComponent(g.payeeName)}&cu=INR&tn=${encodeURIComponent("Offering")}` : "";
+  // same fields as the bank's own QR (pa, pn, mc) so UPI apps treat it as the church's merchant account
+  const params = g.upiId
+    ? [`pa=${encodeURIComponent(g.upiId)}`, `pn=${encodeURIComponent(g.payeeName)}`, g.merchantCode ? `mc=${encodeURIComponent(g.merchantCode)}` : "", "cu=INR", `tn=${encodeURIComponent("Offering")}`].filter(Boolean).join("&")
+    : "";
 
   useEffect(() => {
     if (g.qrImage || !params) return;

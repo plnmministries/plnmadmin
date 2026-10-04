@@ -487,6 +487,10 @@ export function GivingPanel() {
             <Label help="Shown in the payment app">Payee name</Label>
             <Text value={g.payeeName} onChange={(v) => set("settings.giving.payeeName", v)} />
           </div>
+          <div>
+            <Label help={'Optional. The "mc" number from your bank\'s UPI QR (merchant accounts). Helps PhonePe / Google Pay / Paytm accept the payment.'}>Merchant code</Label>
+            <Text value={g.merchantCode || ""} onChange={(v) => set("settings.giving.merchantCode", v.replace(/\D/g, ""))} placeholder="e.g. 5999" />
+          </div>
           {g.upiId && !/^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test(g.upiId) && (
             <div className="flex gap-2 rounded-lg bg-amber-50 p-2.5 text-[12px] text-amber-800">
               <AlertTriangle className="h-4 w-4 shrink-0" /> That doesn&apos;t look like a UPI ID (name@bank).

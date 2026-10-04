@@ -86,6 +86,7 @@ export type Settings = {
     upiId: string;
     payeeName: string;
     qrImage: string; // uploaded QR (takes priority over the generated one)
+    merchantCode?: string; // "mc" from a bank/merchant UPI QR; helps apps accept the payment
     note: string;
   };
   connectForms: ConnectForm[];

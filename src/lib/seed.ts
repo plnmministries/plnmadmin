@@ -75,9 +75,11 @@ export function createSeed(): SiteContent {
       },
       youtubeChannelId: "UCllVnL9Cbo1KFQu6MwBQhmA",
       giving: {
-        upiId: "",
-        payeeName: "Paralokanestham Ministries",
-        qrImage: "",
+        // from the church's IDBI Bank UPI QR (decoded: pa, pn, mc)
+        upiId: "m88nhd60pmh1@idbi",
+        payeeName: "Pattapu Isaac",
+        qrImage: "/brand/upi-qr.jpg",
+        merchantCode: "5999",
         note: "After giving, send us a WhatsApp message with your name and purpose so we can pray over your offering and send a receipt.",
       },
       connectForms: [
