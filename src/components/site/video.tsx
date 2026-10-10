@@ -151,20 +151,31 @@ export function VideoProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export type LiveInfo = { live: boolean; videoId: string | null; next: { videoId: string; title: string; startsAt: string } | null };
+
+/** Polls /api/live: every 90 s normally, every 20 s when a scheduled stream is about to start. */
 export function useLive() {
-  const [live, setLive] = useState<{ live: boolean; videoId: string | null }>({ live: false, videoId: null });
+  const [live, setLive] = useState<LiveInfo>({ live: false, videoId: null, next: null });
   useEffect(() => {
     let alive = true;
-    const load = () =>
-      fetch("/api/live")
-        .then((r) => r.json())
-        .then((d) => alive && setLive(d))
-        .catch(() => {});
+    let timer: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      let delay = 90_000;
+      try {
+        const d: LiveInfo = await (await fetch("/api/live")).json();
+        if (!alive) return;
+        setLive({ live: !!d.live, videoId: d.videoId ?? null, next: d.next ?? null });
+        const startsIn = d.next ? new Date(d.next.startsAt).getTime() - Date.now() : Infinity;
+        if (!d.live && startsIn < 3 * 60_000) delay = 20_000;
+      } catch {
+        // offline: try again later
+      }
+      if (alive) timer = setTimeout(load, delay);
+    };
     load();
-    const t = setInterval(load, 90_000);
     return () => {
       alive = false;
-      clearInterval(t);
+      clearTimeout(timer);
     };
   }, []);
   return live;

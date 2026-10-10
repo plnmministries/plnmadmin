@@ -127,7 +127,9 @@ function parseTime(t: string): [number, number] | null {
 const IST_OFFSET_MIN = 330;
 
 // Next Sunday service start (services are in IST). Returns ms timestamp + matching label.
-export function nextService(times: { label: string; time: string }[], now = Date.now()) {
+// A service stays "next" for a short grace period after its start (streams often start a few
+// minutes late); after that the countdown moves on to the following service.
+export function nextService(times: { label: string; time: string }[], now = Date.now(), graceMin = 20) {
   const istNow = new Date(now + IST_OFFSET_MIN * 60000); // shifted clock; read with getUTC*
   let best: { at: number; label: string; time: string } | null = null;
   for (let addDays = 0; addDays <= 7 && !best; addDays++) {
@@ -137,8 +139,7 @@ export function nextService(times: { label: string; time: string }[], now = Date
       const p = parseTime(s.time);
       if (!p) continue;
       const at = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), p[0], p[1]) - IST_OFFSET_MIN * 60000;
-      // treat a service as "now" for 2 hours after it starts
-      if (at + 2 * 3600000 > now && (!best || at < best.at)) best = { at, label: s.label, time: s.time };
+      if (at + graceMin * 60000 > now && (!best || at < best.at)) best = { at, label: s.label, time: s.time };
     }
   }
   return best;

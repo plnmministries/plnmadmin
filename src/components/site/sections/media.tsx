@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Play, Radio, Search, X } from "lucide-react";
-import { formatDate, nextService, sortedSermons, ytThumb } from "@/lib/util";
+import { ArrowRight, Bell, ChevronLeft, ChevronRight, Play, Radio, Search, X } from "lucide-react";
+import { cleanTitle, formatDate, nextService, sortedSermons, ytThumb } from "@/lib/util";
 import type { Sermon } from "@/lib/types";
 import { ManageChip, Txt, useLang, useSite } from "../context";
 import { embedUrl, SermonCard, useLive, useVideo } from "../video";
@@ -63,7 +63,8 @@ export function LatestSermon({ p }: P) {
   );
 }
 
-function useCountdown(target: number | undefined) {
+/** Current time, ticking every second on the client (null during server render). */
+function useNow() {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     const first = setTimeout(() => setNow(Date.now()), 0); // client-only, avoids hydration mismatch
@@ -73,25 +74,33 @@ function useCountdown(target: number | undefined) {
       clearInterval(t);
     };
   }, []);
-  if (!target || now == null) return null;
-  const diff = Math.max(0, target - now);
-  return {
-    started: diff === 0,
-    d: Math.floor(diff / 86400000),
-    h: Math.floor((diff / 3600000) % 24),
-    m: Math.floor((diff / 60000) % 60),
-    s: Math.floor((diff / 1000) % 60),
-  };
+  return now;
+}
+
+function split(ms: number) {
+  const diff = Math.max(0, ms);
+  return { d: Math.floor(diff / 86400000), h: Math.floor((diff / 3600000) % 24), m: Math.floor((diff / 60000) % 60), s: Math.floor((diff / 1000) % 60) };
 }
 
 function LiveBlock({ p }: P) {
   const { content, editing } = useSite();
   const live = useLive();
   const { play } = useVideo();
-  const { ui, tr } = useLang();
-  const next = useMemo(() => nextService(content.settings.serviceTimes), [content.settings.serviceTimes]);
-  const cd = useCountdown(next?.at);
+  const { ui, tr, locale } = useLang();
+  const now = useNow();
+  const times = content.settings.serviceTimes;
   const latestService = sortedSermons(content).find((s) => ["prophetic-sunday", "holy-communion", "sunday-service", "special-services"].includes(s.category));
+
+  // What's next: a stream the church scheduled on YouTube wins; otherwise the next Sunday service time.
+  // Recomputed every second, so the countdown rolls on to the following service by itself.
+  const yt = live.next;
+  const svc = now != null ? nextService(times, now) : null;
+  const target = yt ? { at: new Date(yt.startsAt).getTime(), from: "youtube" as const } : svc ? { at: svc.at, from: "schedule" as const } : null;
+  const cd = now != null && target ? split(target.at - now) : null;
+  const startingNow = now != null && target != null && target.at - now <= 0;
+  const when = (ms: number) =>
+    new Date(ms).toLocaleString(locale, { weekday: "long", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
+  const svcLabel = svc ? tr(`g:settings.serviceTimes.${times.findIndex((t) => t.label === svc.label)}.label`, svc.label) : "";
 
   return (
     <div id="live" className="scroll-mt-28">
@@ -112,7 +121,7 @@ function LiveBlock({ p }: P) {
               </button>
             ) : null}
           </div>
-          <div>
+          <div className="min-w-0">
             {live.live ? (
               <div className="inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white">
                 <span className="live-dot !bg-white" /> {ui("liveNow")}
@@ -124,25 +133,40 @@ function LiveBlock({ p }: P) {
             )}
             <Txt as="h2" className="h-display mt-5 text-3xl md:text-4xl" value={p.liveTitle} field="liveTitle" />
             <Txt as="p" className="mt-3 text-muted" value={p.liveText} field="liveText" multiline />
-            {!live.live && next && cd && (
+            {!live.live && target && cd && (
               <div className="mt-6">
                 <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent">{ui("nextLive")}</div>
-                <div className="mt-1 text-sm text-muted">
-                  {tr(`g:settings.serviceTimes.${content.settings.serviceTimes.findIndex((t) => t.label === next.label)}.label`, next.label)} · {ui("sunday")} {next.time} {ui("ist")}
-                </div>
-                <div className="mt-3 flex gap-3">
-                  {[
-                    [ui("days"), cd.d],
-                    [ui("hrs"), cd.h],
-                    [ui("min"), cd.m],
-                    [ui("sec"), cd.s],
-                  ].map(([l, v]) => (
-                    <div key={l as string} className="w-16 rounded-xl border border-fg/10 bg-[rgb(var(--bg-rgb)/0.6)] py-3 text-center">
-                      <div className="font-display text-2xl font-bold tabular-nums text-accent">{String(v).padStart(2, "0")}</div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted">{l}</div>
+                {target.from === "youtube" && yt ? (
+                  <>
+                    <div className="mt-1 line-clamp-2 font-semibold leading-snug">{cleanTitle(yt.title)}</div>
+                    <div className="mt-1 text-sm text-muted">
+                      {when(target.at)} {ui("ist")}
                     </div>
-                  ))}
-                </div>
+                  </>
+                ) : (
+                  <div className="mt-1 text-sm text-muted">
+                    {svcLabel} · {when(target.at)} {ui("ist")}
+                  </div>
+                )}
+                {startingNow ? (
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--accent-rgb)/0.4)] bg-[rgb(var(--accent-rgb)/0.1)] px-4 py-3 text-sm font-semibold text-accent">
+                    <span className="live-dot" /> {ui("startingSoon")}
+                  </div>
+                ) : (
+                  <div className="mt-3 flex gap-2 sm:gap-3">
+                    {[
+                      [ui("days"), cd.d],
+                      [ui("hrs"), cd.h],
+                      [ui("min"), cd.m],
+                      [ui("sec"), cd.s],
+                    ].map(([l, v]) => (
+                      <div key={l as string} className="w-[3.75rem] rounded-xl border border-fg/10 bg-[rgb(var(--bg-rgb)/0.6)] py-3 text-center sm:w-16">
+                        <div className="font-display text-2xl font-bold tabular-nums text-accent">{String(v).padStart(2, "0")}</div>
+                        <div className="text-[10px] uppercase tracking-[0.2em] text-muted">{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="mt-7 flex flex-wrap gap-3">
@@ -155,9 +179,16 @@ function LiveBlock({ p }: P) {
               >
                 <YouTubeIcon className="h-4 w-4" /> {ui("openYoutube")}
               </a>
-              <a href={`${content.settings.socials.youtube}?sub_confirmation=1`} target="_blank" rel="noreferrer" className="btn btn-ghost">
-                {ui("subscribe")}
-              </a>
+              {!live.live && yt ? (
+                // YouTube's own "Notify me" lives on the scheduled stream's page
+                <a href={`https://www.youtube.com/watch?v=${yt.videoId}`} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                  <Bell className="h-4 w-4" /> {ui("setReminder")}
+                </a>
+              ) : (
+                <a href={`${content.settings.socials.youtube}?sub_confirmation=1`} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                  {ui("subscribe")}
+                </a>
+              )}
               {live.live && live.videoId && (
                 <button className="btn btn-ghost" onClick={() => play({ id: live.videoId!, title: "Live service", live: true } as never)}>
                   {ui("theatre")}

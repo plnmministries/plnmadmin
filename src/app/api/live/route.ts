@@ -1,18 +1,16 @@
 import { getPublished } from "@/lib/store";
+import { getLiveStatus, type LiveStatus } from "@/lib/youtube-live";
 
-import { detectLive } from "@/lib/youtube-live";
-
-// Is the YouTube channel live right now? Cached in memory for a minute.
-type Live = { live: boolean; videoId: string | null; source?: string };
-let cache: { at: number; data: Live } | null = null;
+// Is the church's YouTube channel live, and when is the next scheduled stream?
+// Cached in memory for a minute (scheduled streams are looked up every 5 minutes).
+let cache: { at: number; data: LiveStatus } | null = null;
 
 export async function GET() {
   if (cache && Date.now() - cache.at < 60_000) return Response.json(cache.data);
   const { settings } = await getPublished();
-  let data: Live = { live: false, videoId: null };
+  let data: LiveStatus = { live: false, videoId: null, next: null };
   try {
-    const hit = await detectLive(settings.youtubeChannelId);
-    if (hit) data = { live: true, videoId: hit.videoId, source: hit.source };
+    data = await getLiveStatus(settings.youtubeChannelId);
   } catch {
     // network hiccup: report not live
   }
