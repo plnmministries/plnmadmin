@@ -7,7 +7,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Paralokanestham Ministries",
   description: "A Spirit-filled church family in Hyderabad.",
-  icons: { icon: "/brand/emblem.png" },
+  // tab / home-screen icons come from app/favicon.ico, app/icon.png and app/apple-icon.png (church emblem)
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
