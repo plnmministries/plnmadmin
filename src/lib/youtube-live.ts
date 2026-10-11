@@ -67,6 +67,11 @@ export function upcomingFromStreamsPage(html: string): string[] {
     .map((t) => t.id);
 }
 
+/** A video's own watch page says it's live (updates the moment the stream starts). */
+export function isLiveWatchPage(html: string) {
+  return /"isLiveNow":\s*true/.test(html);
+}
+
 /** Exact start time + title from a scheduled video's watch page. */
 export function scheduledFromWatchPage(html: string): { startsAt: string; title: string } | null {
   if (!/"isUpcoming":\s*true/.test(html)) return null;
@@ -105,11 +110,25 @@ export async function getLiveStatus(channelId: string): Promise<LiveStatus> {
   ]);
   const a = liveFromLivePage(livePage);
   const b = a ? null : liveFromStreamsPage(streams);
-  const liveId = a || b;
+  let liveId = a || b;
+  let source = a ? "live-page" : b ? "streams-tab" : undefined;
+  const scheduled = await scheduledStreams(channelId, streams).catch(() => [] as NextLive[]);
+
+  // The channel pages can lag a minute behind. Around a scheduled stream's start time, ask that
+  // video's own page directly: it flips to live the moment the stream starts.
+  if (!liveId) {
+    const due = scheduled.find((s) => Math.abs(new Date(s.startsAt).getTime() - Date.now()) < 20 * 60_000);
+    if (due && isLiveWatchPage(await page(`https://www.youtube.com/watch?v=${due.videoId}`).catch(() => ""))) {
+      liveId = due.videoId;
+      source = "scheduled-video";
+      upcomingCache = null; // it's no longer upcoming
+    }
+  }
+
   // only the next scheduled stream matters; keep one that is running late (up to 30 min past its start)
   const cutoff = Date.now() - 30 * 60_000;
-  const next = (await scheduledStreams(channelId, streams).catch(() => [])).find((s) => s.videoId !== liveId && new Date(s.startsAt).getTime() > cutoff) ?? null;
-  return { live: !!liveId, videoId: liveId, source: a ? "live-page" : b ? "streams-tab" : undefined, next };
+  const next = scheduled.find((s) => s.videoId !== liveId && new Date(s.startsAt).getTime() > cutoff) ?? null;
+  return { live: !!liveId, videoId: liveId, source, next };
 }
 
 /** Back-compat helper used elsewhere: just the live video, if any. */

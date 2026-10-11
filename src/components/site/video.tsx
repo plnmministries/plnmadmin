@@ -153,7 +153,7 @@ export function VideoProvider({ children }: { children: ReactNode }) {
 
 export type LiveInfo = { live: boolean; videoId: string | null; next: { videoId: string; title: string; startsAt: string } | null };
 
-/** Polls /api/live: every 90 s normally, every 20 s when a scheduled stream is about to start. */
+/** Polls /api/live: every 90 s normally; every 15 s around a scheduled start, plus a check right when the countdown hits zero. */
 export function useLive() {
   const [live, setLive] = useState<LiveInfo>({ live: false, videoId: null, next: null });
   useEffect(() => {
@@ -166,7 +166,9 @@ export function useLive() {
         if (!alive) return;
         setLive({ live: !!d.live, videoId: d.videoId ?? null, next: d.next ?? null });
         const startsIn = d.next ? new Date(d.next.startsAt).getTime() - Date.now() : Infinity;
-        if (!d.live && startsIn < 3 * 60_000) delay = 20_000;
+        if (!d.live && startsIn < 3 * 60_000) delay = 15_000;
+        // check again right as the countdown reaches zero
+        if (!d.live && startsIn > 0) delay = Math.min(delay, startsIn + 3_000);
       } catch {
         // offline: try again later
       }
