@@ -10,13 +10,13 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   const rows = await db()`
     select u.*, (select count(*)::int from app_push_tokens t where t.user_id = u.id) as devices
     from app_users u
-    where (${q.trim() === ""} or u.name ilike ${like} or u.email ilike ${like} or u.phone ilike ${like})
+    where (${q.trim() === ""} or u.name ilike ${like} or u.username ilike ${like} or u.email ilike ${like} or u.phone ilike ${like})
       and (${role === ""} or u.role = ${role})
     order by u.created_at desc limit 300`;
   return (
     <div className="space-y-4">
       <form className="flex flex-wrap gap-2">
-        <input name="q" defaultValue={q} placeholder="Search name, email or phone" className={`${input} md:w-80`} />
+        <input name="q" defaultValue={q} placeholder="Search name, username, email or phone" className={`${input} md:w-80`} />
         <select name="role" defaultValue={role} className={`${input} w-auto`}>
           <option value="">All roles</option>
           <option value="member">Members</option>
@@ -49,6 +49,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
                     {(u.name as string) || <span className="italic text-neutral-400">no name yet</span>} {u.blocked && <Pill tone="red">blocked</Pill>}
                   </td>
                   <td className="py-2 pr-3 text-neutral-600">
+                    {u.username && <div className="font-medium text-neutral-800">@{u.username as string}</div>}
                     {u.email as string}
                     {u.phone && <div>{u.phone as string}</div>}
                   </td>

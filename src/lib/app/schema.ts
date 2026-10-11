@@ -12,7 +12,10 @@ export function appReady(): Promise<void> {
     const sql = db();
     await sql`create table if not exists app_users (
       id bigserial primary key,
-      email text unique,
+      username text unique,                          -- lowercase, 3-20 of a-z 0-9 _ . (login is handled by the site)
+      password_hash text,                            -- scrypt, hex
+      password_salt text,
+      email text unique,                             -- optional, only for password reset
       phone text unique,
       name text not null default '',
       photo text,
@@ -23,6 +26,9 @@ export function appReady(): Promise<void> {
       created_at timestamptz not null default now(),
       last_seen_at timestamptz
     )`;
+    await sql`alter table app_users add column if not exists username text unique`;
+    await sql`alter table app_users add column if not exists password_hash text`;
+    await sql`alter table app_users add column if not exists password_salt text`;
     await sql`create table if not exists app_otps (
       id bigserial primary key,
       target text not null,                          -- email (later: phone)
@@ -116,6 +122,7 @@ export function appReady(): Promise<void> {
 
 export type AppUser = {
   id: number;
+  username: string | null;
   email: string | null;
   phone: string | null;
   name: string;
