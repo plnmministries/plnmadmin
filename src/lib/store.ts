@@ -6,9 +6,11 @@ import { createSeed } from "./seed";
 import { SEED_TRANSLATIONS } from "./seed-translations";
 import { db, hasDb, kvDel, kvGet, kvSet, mediaGet, ready } from "./db";
 import { migrate } from "./migrate";
+import { listKeys, mediaKey, publicUrl, putObject, storageConfigured } from "./storage";
 
 // Content store with two backends:
 //   • Postgres (when DATABASE_URL is set; Neon in production): tables plnm_kv / plnm_revisions / plnm_media
+//     (uploaded images go to Cloudflare R2 instead when the R2_* variables are set; see saveMedia)
 //   • Local files (development):
 //       data/published.json   – what visitors see
 //       data/draft.json       – the editor's working copy (absent = no unpublished changes)
@@ -131,15 +133,25 @@ export async function restoreRevision(id: string) {
 }
 
 // ---- uploaded images ----
+// New uploads go to Cloudflare R2 (media/{name}, served straight from R2_PUBLIC_URL) when the R2_*
+// variables are set, else to the database (Neon) or ./data/uploads. /media/[...file] keeps serving
+// the older database/local images and redirects anything else to R2. scripts/migrate-media-to-r2.ts
+// copies the database images over.
 
-export async function saveMedia(name: string, type: string, data: Buffer) {
+/** Saves an image and returns the URL to put in the content. */
+export async function saveMedia(name: string, type: string, data: Buffer): Promise<string> {
+  if (storageConfigured()) {
+    await putObject(mediaKey(name), type, data);
+    return publicUrl(mediaKey(name));
+  }
   if (hasDb()) {
     await ready();
     await db()`insert into plnm_media (name, type, data) values (${name}, ${type}, ${data}) on conflict (name) do update set type = excluded.type, data = excluded.data`;
-    return;
+    return `/media/${name}`;
   }
   await fs.mkdir(UPLOADS_DIR, { recursive: true });
   await fs.writeFile(path.join(UPLOADS_DIR, name), data);
+  return `/media/${name}`;
 }
 
 export async function readMedia(name: string, type: string): Promise<{ type: string; data: Buffer } | null> {
@@ -151,11 +163,26 @@ export async function readMedia(name: string, type: string): Promise<{ type: str
   }
 }
 
+/** URLs of every uploaded image, newest first: R2 ones first, then database/local ones not yet copied to R2. */
 export async function listMedia(): Promise<string[]> {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  if (storageConfigured()) {
+    for (const o of await listKeys("media/")) {
+      const name = o.key.slice("media/".length);
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      urls.push(publicUrl(o.key));
+    }
+  }
+  let names: string[];
   if (hasDb()) {
     await ready();
     const rows = await db()`select name from plnm_media order by created_at desc`;
-    return rows.map((r) => r.name as string);
+    names = rows.map((r) => r.name as string);
+  } else {
+    names = (await fs.readdir(UPLOADS_DIR).catch(() => [] as string[])).filter((f) => !f.startsWith(".")).sort().reverse();
   }
-  return (await fs.readdir(UPLOADS_DIR).catch(() => [] as string[])).filter((f) => !f.startsWith(".")).sort().reverse();
+  for (const name of names) if (!seen.has(name)) urls.push(`/media/${name}`);
+  return urls;
 }

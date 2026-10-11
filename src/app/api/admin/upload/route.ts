@@ -17,6 +17,6 @@ export async function POST(req: Request) {
   if (file.size > MAX) return Response.json({ error: "Image is larger than 8 MB" }, { status: 400 });
   const base = path.basename(file.name, ext).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "image";
   const name = `${Date.now().toString(36)}-${base}${ext}`;
-  await saveMedia(name, type, Buffer.from(await file.arrayBuffer()));
-  return Response.json({ url: `/media/${name}` });
+  const url = await saveMedia(name, type, Buffer.from(await file.arrayBuffer()));
+  return Response.json({ url });
 }

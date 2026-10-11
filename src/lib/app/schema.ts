@@ -89,10 +89,13 @@ export function appReady(): Promise<void> {
       lng double precision,
       accuracy double precision,
       biometric boolean not null default false,
-      selfie bytea,
+      selfie_key text,                               -- R2 key attendance/YYYY-MM-DD/{id}.jpg; the object is deleted after 15 days
       device text not null default '',
       note text not null default ''
     )`;
+    // tables created before selfies moved to R2 (the bytea column never held real data)
+    await sql`alter table app_attendance add column if not exists selfie_key text`;
+    await sql`alter table app_attendance drop column if exists selfie`;
     await sql`create index if not exists app_attendance_user on app_attendance (user_id, check_in_at desc)`;
     await sql`create table if not exists app_notifications (
       id bigserial primary key,

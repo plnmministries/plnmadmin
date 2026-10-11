@@ -6,7 +6,7 @@ import { isAdmin, unauthorized } from "@/lib/admin-guard";
 // Media library: uploaded images first, then the built-in photos that ship with the site.
 export async function GET() {
   if (!(await isAdmin())) return unauthorized();
-  const uploads = (await listMedia()).map((f) => `/media/${f}`);
+  const uploads = await listMedia();
   const pub = path.join(process.cwd(), "public");
   const builtIn: string[] = [];
   for (const dir of ["brand", "images/ig", "images/yt"]) {

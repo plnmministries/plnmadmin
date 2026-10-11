@@ -20,7 +20,7 @@ They're then stored hashed in `data/admin.json` and the `.env.local` values stop
   - `published.json` — what visitors see
   - `draft.json` — the editor's autosaved working copy (unpublished changes)
   - `revisions/` — a snapshot of every publish (restore from **History** in the editor)
-  - `uploads/` — images uploaded in the editor, served at `/media/…`
+  - `uploads/` — images uploaded in the editor, served at `/media/…` (or Cloudflare R2 when configured, see below)
 - Back up the `data/` folder; it *is* the website content.
 
 ## The editor (`/admin`)
@@ -53,3 +53,17 @@ stored in Postgres (Neon) instead of `./data`, so the app works on hosts without
 
 The free plan sleeps after 15 minutes without use, so the first visit to the editor takes about a minute.
 Visitors are not affected: the public website reads straight from the database.
+
+### Cloudflare R2 (uploaded images)
+
+When the `R2_*` variables are set (see `.env.example`), images uploaded in the editor go to Cloudflare R2
+under `media/{name}` and the content references them at `R2_PUBLIC_URL/media/…` directly; the database and
+`./data/uploads` stay as fallbacks and `/media/…` keeps serving the older images (anything else redirects to R2).
+The check-in selfies in the mobile-app admin area are read from R2 through signed URLs and disappear after 15 days.
+
+The Cloudflare setup (buckets, API token, custom domain `media.paralokanestham.in`, lifecycle rule) is written up
+in the public site's README → "Cloudflare R2". Afterwards, copy the images already in the database once:
+
+```bash
+npm run migrate-media        # copies every plnm_media row to R2 and prints what it did; rows are kept
+```

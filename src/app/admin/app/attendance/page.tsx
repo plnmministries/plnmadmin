@@ -12,7 +12,7 @@ export default async function Attendance({ searchParams }: { searchParams: Promi
   const user = sp.user || "";
   const sql = db();
   const rows = await sql`
-    select a.id, a.check_in_at, a.check_out_at, a.lat, a.lng, a.accuracy, a.biometric, a.device, a.note, (a.selfie is not null) as has_selfie, u.name, u.id as user_id,
+    select a.id, a.check_in_at, a.check_out_at, a.lat, a.lng, a.accuracy, a.biometric, a.device, a.note, (a.selfie_key is not null and a.check_in_at > now() - interval '15 days') as has_selfie, u.name, u.id as user_id,
            extract(epoch from (coalesce(a.check_out_at, now()) - a.check_in_at))::float as seconds
     from app_attendance a join app_users u on u.id = a.user_id
     where a.check_in_at >= ${from}::date and a.check_in_at < (${to}::date + interval '1 day')
