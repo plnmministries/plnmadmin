@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, Calendar, Check, ChevronDown, Church, CloudOff, Command, ExternalLink, HandCoins, History, Loader2, LogOut, MessageCircle, Monitor,
-  Palette, PanelsTopLeft, PlayCircle, Plus, Redo2, Rocket, Search, Smartphone, Tablet, Undo2, Files, X, Languages, UserCog,
+  Palette, PanelsTopLeft, PlayCircle, Plus, Redo2, Rocket, Search, Smartphone, Tablet, Undo2, Files, X, Languages, UserCog, TabletSmartphone,
 } from "lucide-react";
 import { LANGS, type Lang } from "@/lib/i18n";
 import type { SiteContent } from "@/lib/types";
@@ -262,6 +263,10 @@ export default function Editor({ initial, hasDraft, siteUrl = "" }: { initial: S
         <div className="flex min-h-0 flex-1">
           {/* Icon rail */}
           <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-neutral-200 bg-white py-2">
+            <Link href="/admin/app" title="Mobile app: users, prayer requests, daily prayers, attendance" className="group relative mb-1 grid h-10 w-10 place-items-center rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100">
+              <TabletSmartphone className="h-[18px] w-[18px]" />
+              <span className="pointer-events-none absolute left-12 z-50 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium text-white group-hover:block">Mobile app</span>
+            </Link>
             {RAIL.map(({ id, label, Icon }) => (
               <button key={id} title={label} onClick={() => openPanel(id)} className={`group relative grid h-10 w-10 place-items-center rounded-lg ${panel === id ? "bg-sky-50 text-sky-700" : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"}`}>
                 <Icon className="h-[18px] w-[18px]" />
