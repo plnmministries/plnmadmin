@@ -1,6 +1,9 @@
 "use server";
 
+import { randomBytes, scrypt as scryptCb } from "crypto";
+import { promisify } from "util";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-guard";
 import { db } from "@/lib/db";
 import { appReady } from "@/lib/app/schema";
@@ -28,6 +31,37 @@ export async function setUserRole(fd: FormData) {
   if (!["member", "volunteer", "admin"].includes(role)) return;
   await sql`update app_users set role = ${role} where id = ${n(fd, "id")}`;
   revalidatePath("/admin/app/users");
+}
+
+const scrypt = promisify(scryptCb) as (pw: string, salt: string, len: number) => Promise<Buffer>;
+
+/**
+ * Create an account (member, volunteer or admin) with a mobile number and password; email is optional.
+ * The password is hashed exactly like the app's own sign-up (scrypt, 16-byte hex salt, 64-byte hex hash), so
+ * the person signs in to the app with the mobile number or email and this password.
+ */
+export async function createPerson(fd: FormData) {
+  const sql = await guard();
+  const back = (q: Record<string, string>): never => redirect(`/admin/app/users?${new URLSearchParams(q)}`);
+  const name = s(fd, "name", 80);
+  const role = ["member", "volunteer", "admin"].includes(s(fd, "role")) ? s(fd, "role") : "member";
+  const phone = s(fd, "phone", 20).replace(/[^\d+ ]/g, "");
+  const digits = phone.replace(/\D/g, "");
+  const email = s(fd, "email", 200).toLowerCase();
+  const password = String(fd.get("password") ?? "");
+  if (name.length < 2) back({ error: "Enter the person's name" });
+  if (digits.length < 10) back({ error: "Enter a 10-digit mobile number" });
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) back({ error: "That email address doesn't look right" });
+  if (password.length < 8 || password.length > 100) back({ error: "The password needs at least 8 characters" });
+  if ((await sql`select 1 from app_users where right(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), 10) = ${digits.slice(-10)}`).length)
+    back({ error: "An account with this mobile number already exists" });
+  if (email && (await sql`select 1 from app_users where email = ${email}`).length) back({ error: "An account with this email already exists" });
+  const salt = randomBytes(16).toString("hex");
+  const hash = (await scrypt(password, salt, 64)).toString("hex");
+  await sql`insert into app_users (name, phone, email, password_hash, password_salt, role)
+            values (${name}, ${phone}, ${email || null}, ${hash}, ${salt}, ${role})`;
+  revalidatePath("/admin/app/users");
+  back({ added: `${name} (${role})` });
 }
 
 export async function setUserBlocked(fd: FormData) {

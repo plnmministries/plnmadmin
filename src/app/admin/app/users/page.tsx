@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
 import { appReady } from "@/lib/app/schema";
-import { setUserBlocked, setUserRole } from "../actions";
-import { Card, Pill, btnLight, fmt, input } from "../ui";
+import { createPerson, setUserBlocked, setUserRole } from "../actions";
+import { Card, Pill, btn, btnLight, fmt, input } from "../ui";
 
-export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string; role?: string }> }) {
+export default async function Users({ searchParams }: { searchParams: Promise<{ q?: string; role?: string; added?: string; error?: string }> }) {
   await appReady();
-  const { q = "", role = "" } = await searchParams;
+  const { q = "", role = "", added, error } = await searchParams;
   const like = `%${q.trim()}%`;
   const rows = await db()`
     select u.*, (select count(*)::int from app_push_tokens t where t.user_id = u.id) as devices
@@ -15,6 +15,27 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
     order by u.created_at desc limit 300`;
   return (
     <div className="space-y-4">
+      <Card title="Add a person">
+        <p className="mb-3 text-[11.5px] text-neutral-500">
+          Creates an app account. They sign in to the app with this <b>mobile number</b> (or the email) and the password. Give the password to them in person and ask them to change it in the app.
+        </p>
+        {added && <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] font-medium text-emerald-800">Account created: {added}</p>}
+        {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-[12.5px] font-medium text-red-700">{error}</p>}
+        <form action={createPerson} className="grid gap-2 md:grid-cols-5">
+          <input name="name" required minLength={2} placeholder="Full name" className={input} />
+          <input name="phone" required inputMode="tel" placeholder="Mobile number" className={input} />
+          <input name="email" type="email" placeholder="Email (optional)" className={input} />
+          <input name="password" type="text" required minLength={8} placeholder="Password (8+ characters)" autoComplete="off" className={input} />
+          <div className="flex gap-2">
+            <select name="role" defaultValue="volunteer" className={`${input} w-auto`}>
+              <option value="member">Member</option>
+              <option value="volunteer">Volunteer</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button className={`${btn} bg-neutral-900 text-white hover:bg-neutral-800`}>Create</button>
+          </div>
+        </form>
+      </Card>
       <form className="flex flex-wrap gap-2">
         <input name="q" defaultValue={q} placeholder="Search name, username, email or phone" className={`${input} md:w-80`} />
         <select name="role" defaultValue={role} className={`${input} w-auto`}>
