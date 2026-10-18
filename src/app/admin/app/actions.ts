@@ -12,6 +12,7 @@ import { announcePendingPrayers, pushTextFor, syncDailyPrayers } from "@/lib/app
 import { videoTitle } from "@/lib/app/youtube-videos";
 import { getPublished } from "@/lib/store";
 import { cleanTitle, parseYouTubeId, todayISO } from "@/lib/util";
+import { refreshAppFeeds } from "@/lib/app/site-feeds";
 
 // Server actions for the Mobile app admin pages. Every action re-checks the admin session.
 
@@ -89,6 +90,7 @@ export async function syncNow() {
   const { settings } = await getPublished();
   const added = await syncDailyPrayers(settings.youtubeChannelId);
   const notified = await announcePendingPrayers();
+  await refreshAppFeeds("app-daily");
   revalidatePath("/admin/app/daily");
   revalidatePath("/admin/app");
   return { added, notified };
@@ -110,6 +112,7 @@ export async function addDailyPrayer(fd: FormData) {
     await notify("all", t, body, { kind: "daily", id: Number(rows[0].id) });
     await sql`update app_daily_prayers set notified_at = now() where id = ${Number(rows[0].id)}`;
   }
+  await refreshAppFeeds("app-daily");
   revalidatePath("/admin/app/daily");
 }
 
@@ -121,12 +124,14 @@ export async function sendDailyNow(fd: FormData) {
   const { title, body } = pushTextFor(rows[0].title as string);
   await notify("all", title, body, { kind: "daily", id });
   await sql`update app_daily_prayers set notified_at = now() where id = ${id}`;
+  await refreshAppFeeds("app-daily");
   revalidatePath("/admin/app/daily");
 }
 
 export async function setDailyHidden(fd: FormData) {
   const sql = await guard();
   await sql`update app_daily_prayers set hidden = ${s(fd, "hidden") === "1"} where id = ${n(fd, "id")}`;
+  await refreshAppFeeds("app-daily");
   revalidatePath("/admin/app/daily");
 }
 
@@ -141,12 +146,14 @@ export async function createUpdate(fd: FormData) {
     await notify("all", title, s(fd, "body", 4000) || "New update from the church", { kind: "update", id });
     await sql`update app_updates set notified_at = now() where id = ${id}`;
   }
+  await refreshAppFeeds("app-updates");
   revalidatePath("/admin/app/updates");
 }
 
 export async function deleteUpdate(fd: FormData) {
   const sql = await guard();
   await sql`delete from app_updates where id = ${n(fd, "id")}`;
+  await refreshAppFeeds("app-updates");
   revalidatePath("/admin/app/updates");
 }
 
@@ -169,4 +176,30 @@ export async function sendCustomNotification(fd: FormData) {
   const audience = (s(fd, "audience") === "volunteers" ? "volunteers" : "all") as Audience;
   await notify(audience, title, body, { kind: "custom" });
   revalidatePath("/admin/app/notify");
+}
+
+// ---- volunteer requests ----
+export async function decideVolunteerRequest(fd: FormData) {
+  const sql = await guard();
+  const approve = s(fd, "decision") === "approve";
+  const rows = await sql`update app_volunteer_requests set status = ${approve ? "approved" : "declined"}, decided_at = now()
+                         where id = ${n(fd, "id")} and status = 'pending' returning user_id`;
+  if (rows.length && approve) {
+    const userId = Number(rows[0].user_id);
+    await sql`update app_users set role = 'volunteer' where id = ${userId} and role = 'member'`;
+    await notify(`user:${userId}`, "Welcome to the volunteer team 🙌", "Open the app → More → Volunteer to check in and help with prayer requests.", { kind: "custom" }).catch(() => 0);
+  }
+  revalidatePath("/admin/app/volunteers");
+  revalidatePath("/admin/app");
+}
+
+// ---- Word for today ----
+export async function publishVerse(fd: FormData) {
+  const sql = await guard();
+  const text = s(fd, "text", 1500).replace(/^[“"']+|[”"']+$/g, "").trim();
+  if (text.length < 3) redirect("/admin/app/verse?error=" + encodeURIComponent("Paste the verse first"));
+  await sql`insert into app_verses (text, reference) values (${text}, ${s(fd, "reference", 120)})`;
+  await refreshAppFeeds("app-daily");
+  revalidatePath("/admin/app/verse");
+  redirect("/admin/app/verse?published=1");
 }

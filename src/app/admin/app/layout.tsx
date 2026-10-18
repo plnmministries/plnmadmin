@@ -5,9 +5,10 @@ import { isAdmin } from "@/lib/admin-guard";
 import { AppNav } from "./nav";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Mobile app · Paralokanestham admin", robots: { index: false } };
+export const metadata: Metadata = { title: "Admin · Paralokanestham", robots: { index: false } };
 
-// Management pages for the mobile app (users, prayer requests, daily prayers, updates, attendance).
+// The admin portal: dashboard, people and volunteers, attendance, prayer requests and the app's content.
+// The website editor is one of the tabs (/admin/editor).
 export default async function AppAdminLayout({ children }: { children: React.ReactNode }) {
   if (!(await isAdmin())) redirect("/admin/login?next=/admin/app");
   return (
@@ -16,9 +17,9 @@ export default async function AppAdminLayout({ children }: { children: React.Rea
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/emblem.png" alt="" className="h-8 w-auto" />
-          <span className="text-[14px] font-bold">Mobile app</span>
-          <Link href="/admin" className="ml-auto rounded-lg border border-neutral-300 px-3 py-1.5 text-[12px] font-semibold hover:bg-neutral-50">
-            ← Website editor
+          <span className="text-[14px] font-bold">Paralokanestham Admin</span>
+          <Link href="/admin/editor" className="ml-auto rounded-lg border border-neutral-300 px-3 py-1.5 text-[12px] font-semibold hover:bg-neutral-50">
+            Website editor →
           </Link>
         </div>
         <AppNav />

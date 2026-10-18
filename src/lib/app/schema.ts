@@ -103,6 +103,22 @@ export function appReady(): Promise<void> {
     await sql`alter table app_attendance add column if not exists selfie_key text`;
     await sql`alter table app_attendance drop column if exists selfie`;
     await sql`create index if not exists app_attendance_user on app_attendance (user_id, check_in_at desc)`;
+    await sql`create table if not exists app_volunteer_requests (
+      id bigserial primary key,
+      user_id bigint not null references app_users(id) on delete cascade,
+      note text not null default '',
+      status text not null default 'pending',        -- pending | approved | declined
+      decided_by bigint references app_users(id) on delete set null,
+      decided_at timestamptz,
+      created_at timestamptz not null default now()
+    )`;
+    await sql`create table if not exists app_verses (
+      id bigserial primary key,
+      text text not null,
+      reference text not null default '',
+      created_by bigint references app_users(id) on delete set null,
+      created_at timestamptz not null default now()
+    )`;
     await sql`create table if not exists app_notifications (
       id bigserial primary key,
       kind text not null,                            -- daily | update | prayer-reply | custom

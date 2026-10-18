@@ -263,7 +263,7 @@ export default function Editor({ initial, hasDraft, siteUrl = "" }: { initial: S
         <div className="flex min-h-0 flex-1">
           {/* Icon rail */}
           <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-neutral-200 bg-white py-2">
-            <Link href="/admin/app" title="Mobile app: users, prayer requests, daily prayers, attendance" className="group relative mb-1 grid h-10 w-10 place-items-center rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100">
+            <Link href="/admin/app" title="Admin dashboard: people, volunteers, attendance, prayer requests, app content" className="group relative mb-1 grid h-10 w-10 place-items-center rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100">
               <TabletSmartphone className="h-[18px] w-[18px]" />
               <span className="pointer-events-none absolute left-12 z-50 hidden whitespace-nowrap rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium text-white group-hover:block">Mobile app</span>
             </Link>

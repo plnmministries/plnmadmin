@@ -4,13 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ITEMS = [
-  ["/admin/app", "Overview"],
+  ["/admin/app", "Dashboard"],
+  ["/admin/app/users", "People"],
+  ["/admin/app/volunteers", "Volunteer requests"],
+  ["/admin/app/attendance", "Attendance"],
   ["/admin/app/prayer-requests", "Prayer requests"],
   ["/admin/app/daily", "Daily prayers"],
+  ["/admin/app/verse", "Word for today"],
   ["/admin/app/updates", "Updates"],
-  ["/admin/app/users", "Users & volunteers"],
-  ["/admin/app/attendance", "Attendance"],
   ["/admin/app/notify", "Send notification"],
+  ["/admin/editor", "Website editor"],
 ] as const;
 
 export function AppNav() {
